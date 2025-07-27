@@ -1,4 +1,6 @@
 # Tilda Custom Cart with Telegram & CRM Integration  
+[![Поддержать на Boosty](https://img.shields.io/badge/Support-Boosty-orange?logo=boosty)](https://boosty.to/afilaga)
+
 _The Filatiev Method – Case 001_
 
 Рабочий модуль корзины для сайта на Tilda (Zero Block), созданный без серверной части.
@@ -35,7 +37,11 @@ _The Filatiev Method – Case 001_
 
 ## 🔗 Ссылки
 
-- [Поддержать на Boosty](https://boosty.to/afilaga)
+---
+
+📬 Если модуль оказался полезным — поддержи на [Boosty](https://boosty.to/afilaga).  
+Это поможет сделать больше рабочих решений и выпускать новые кейсы.
+
 
 ---
 
