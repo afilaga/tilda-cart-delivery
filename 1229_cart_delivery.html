@@ -1,1 +1,877 @@
-<!-- sanitized cart html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Корзина с доставкой</title>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --main-color: #a1846c;
+      --second-color: #d4b483;
+      --bg-color: #fdfbf6;
+      --text-color: #333;
+      --dark-color: #262626;
+      --error-color: #e74c3c;
+    }
+    
+    * {
+      font-family: 'Oswald', sans-serif;
+      box-sizing: border-box;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-color);
+    }
+    
+    .cart-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 60px;
+      height: 60px;
+      background: var(--main-color);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      z-index: 1000;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+      outline: none;
+    }
+    
+    .cart-btn:hover {
+      transform: scale(1.1);
+      background: var(--second-color);
+    }
+    
+    .cart-icon {
+      width: 24px;
+      height: 24px;
+      fill: white;
+    }
+    
+    .cart-count {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: white;
+      color: var(--main-color);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      border: 2px solid var(--main-color);
+    }
+    
+    .cart-module {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 100%;
+      max-width: 450px;
+      height: 100vh;
+      background: white;
+      box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+      z-index: 1001;
+      transition: right 0.4s ease;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .cart-module.open {
+      right: 0;
+    }
+    
+    .cart-header {
+      padding: 20px;
+      background: var(--dark-color);
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .cart-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 500;
+    }
+    
+    .close-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px;
+    }
+    
+    .cart-scroll-container {
+      flex: 1;
+      overflow-y: auto;
+      padding-bottom: 20px;
+    }
+    
+    .cart-content {
+      padding: 15px;
+    }
+    
+    .cart-empty {
+      text-align: center;
+      padding: 40px 0;
+      color: var(--text-color);
+    }
+    
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .item-info {
+      flex: 1;
+    }
+    
+    .item-name {
+      font-weight: 500;
+      margin-bottom: 5px;
+      color: var(--dark-color);
+    }
+    
+    .item-price {
+      color: var(--main-color);
+      font-size: 14px;
+    }
+    
+    .item-controls {
+      display: flex;
+      align-items: center;
+    }
+    
+    .quantity-btn {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--main-color);
+      background: none;
+      border-radius: 50%;
+      cursor: pointer;
+      color: var(--main-color);
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .item-quantity {
+      margin: 0 10px;
+      min-width: 20px;
+      text-align: center;
+    }
+    
+    .cart-footer {
+      padding: 15px;
+      border-top: 1px solid #eee;
+      background: white;
+    }
+    
+    .order-summary {
+      margin-bottom: 20px;
+    }
+    
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    
+    .summary-label {
+      color: var(--text-color);
+    }
+    
+    .summary-value {
+      font-weight: bold;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: var(--text-color);
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 10px 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    
+    select.form-control {
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 16px;
+    }
+    
+    .radio-group {
+      display: flex;
+      gap: 15px;
+      margin-top: 5px;
+    }
+    
+    .radio-option {
+      display: flex;
+      align-items: center;
+    }
+    
+    .radio-option input {
+      margin-right: 5px;
+    }
+    
+    .error-message {
+      color: var(--error-color);
+      font-size: 12px;
+      margin-top: 5px;
+      display: none;
+    }
+    
+    .delivery-map-container {
+      margin: 15px 0;
+    }
+    
+    .delivery-map-title {
+      font-weight: 500;
+      margin-bottom: 10px;
+      color: var(--dark-color);
+      text-align: center;
+    }
+    
+    .delivery-map {
+      height: 400px;
+      width: 100%;
+      background: #f5f5f5;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    
+    .delivery-zones-info {
+      font-size: 13px;
+      color: var(--text-color);
+      margin-top: 5px;
+    }
+    
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background: var(--main-color);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-top: 10px;
+      font-weight: 500;
+    }
+    
+    .submit-btn:hover {
+      background: var(--second-color);
+    }
+    
+    .submit-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .confirmation-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1002;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .confirmation-content {
+      background: white;
+      padding: 25px;
+      border-radius: 8px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+    
+    .confirmation-title {
+      font-size: 20px;
+      margin-bottom: 15px;
+      color: var(--dark-color);
+    }
+    
+    .confirmation-message {
+      margin-bottom: 20px;
+      color: var(--text-color);
+    }
+    
+    .confirmation-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    
+    .confirmation-btn {
+      padding: 10px 20px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    
+    .confirmation-confirm {
+      background: var(--main-color);
+      color: white;
+    }
+    
+    .confirmation-cancel {
+      background: #eee;
+      color: var(--text-color);
+    }
+    
+    @media (max-width: 480px) {
+      .cart-module {
+        max-width: 100%;
+        height: 100%;
+      }
+      
+      .cart-btn {
+        width: 50px;
+        height: 50px;
+        bottom: 20px;
+        right: 20px;
+      }
+      
+      .cart-icon {
+        width: 20px;
+        height: 20px;
+      }
+      
+      .radio-group {
+        flex-direction: column;
+        gap: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Кнопка корзины -->
+<button class="cart-btn" id="cartBtn" aria-label="Корзина">
+  <svg class="cart-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M17 18a2 2 0 0 1 2 2 2 2 0 0 1-2 2 2 2 0 0 1-2-2c0-1.11.89-2 2-2zM1 2h3.27l.94 2H20a1 1 0 0 1 1 1c0 .17-.05.34-.12.5l-3.58 6.47c-.34.61-1 1.03-1.8 1.03H8.1l-.9 1.63-.03.12a.25.25 0 0 0 .25.25H19v2H7a2 2 0 0 1-2-2c0-.35.09-.68.24-.96l1.36-2.45L3 4H1V2z"/>
+  </svg>
+  <span class="cart-count" id="cartCount">0</span>
+</button>
+
+<!-- Модуль корзины -->
+<div class="cart-module" id="cartModule">
+  <div class="cart-header">
+    <h2 class="cart-title">Ваш заказ</h2>
+    <button class="close-btn" id="closeCart">×</button>
+  </div>
+  
+  <div class="cart-scroll-container">
+    <div class="cart-content" id="cartContent">
+      <div class="cart-empty">Корзина пуста</div>
+    </div>
+    
+    <div class="cart-footer">
+      <div class="order-summary">
+        <div class="summary-row">
+          <span class="summary-label">Сумма заказа:</span>
+          <span class="summary-value" id="orderSubtotal">0 ₽</span>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label" for="clientName">Имя *</label>
+        <input type="text" class="form-control" id="clientName" placeholder="Ваше имя" required>
+        <div class="error-message" id="nameError">Пожалуйста, укажите имя</div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label" for="clientPhone">Телефон *</label>
+        <input type="tel" class="form-control" id="clientPhone" placeholder="7XXXXXXXXXX" value="7" required>
+        <div class="error-message" id="phoneError">Укажите корректный телефон (10 цифр после 7)</div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label" for="deliveryMethod">Способ получения</label>
+        <select class="form-control" id="deliveryMethod">
+          <option value="courier">Доставка курьером</option>
+          <option value="pickup">Самовывоз</option>
+        </select>
+      </div>
+      
+      <div class="form-group" id="addressField">
+        <label class="form-label" for="clientAddress">Адрес доставки *</label>
+        <input type="text" class="form-control" id="clientAddress" placeholder="Улица, дом, квартира">
+        <div class="error-message" id="addressError">Укажите адрес доставки</div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Способ оплаты</label>
+        <div class="radio-group">
+          <label class="radio-option">
+            <input type="radio" name="payment" value="cash" checked> Наличные
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="payment" value="card"> Картой
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="payment" value="qr"> QR-код
+          </label>
+        </div>
+      </div>
+      
+      <!-- Карта доставки (возвращена как было) -->
+      <div class="delivery-map-container" id="mapContainer">
+        <div class="delivery-map-title">Рассчёт стоимости доставки по Сочи</div>
+        <div class="delivery-map" id="deliveryMap">
+          <script type="text/javascript" charset="utf-8" async src="https://api-maps.yandex.ru/services/constructor/1.0/js/?um=constructor%3AYOUR_YANDEX_MAP_KEY14886050c34a692c8a8de4c5&amp;width=100%25&amp;height=400&amp;lang=ru_RU&amp;scroll=true"></script>
+        </div>
+        <div class="delivery-zones-info">
+          • Синяя зона: 350 ₽<br>
+          • Желтая зона: 500 ₽<br>
+          • Красная зона: 700 ₽<br>
+          • Самовывоз: бесплатно
+        </div>
+      </div>
+      
+      <div class="summary-row" style="margin-top: 10px;">
+        <span class="summary-label" style="font-size: 16px;">Итого:</span>
+        <span class="summary-value" style="font-size: 18px;" id="orderTotal">0 ₽</span>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label" for="clientComment">Комментарий к заказу</label>
+        <textarea class="form-control" id="clientComment" placeholder="Дополнительные пожелания"></textarea>
+      </div>
+      
+      <button class="submit-btn" id="submitOrder" disabled>Оформить заказ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно подтверждения -->
+<div class="confirmation-modal" id="confirmationModal">
+  <div class="confirmation-content">
+    <h3 class="confirmation-title">Подтверждение заказа</h3>
+    <p class="confirmation-message">Вы уверены, что хотите оформить заказ?</p>
+    <div class="confirmation-buttons">
+      <button class="confirmation-btn confirmation-confirm" id="confirmOrder">Да, оформить</button>
+      <button class="confirmation-btn confirmation-cancel" id="cancelOrder">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация корзины
+    let cart = JSON.parse(localStorage.getItem('tilda-cart')) || [];
+    let deliveryCost = 0;
+    let deliveryZone = '';
+
+    // Элементы интерфейса
+    const cartBtn = document.getElementById('cartBtn');
+    const cartModule = document.getElementById('cartModule');
+    const closeBtn = document.getElementById('closeCart');
+    const cartContent = document.getElementById('cartContent');
+    const cartCount = document.getElementById('cartCount');
+    const orderSubtotal = document.getElementById('orderSubtotal');
+    const orderTotal = document.getElementById('orderTotal');
+    const submitBtn = document.getElementById('submitOrder');
+    const deliveryMethod = document.getElementById('deliveryMethod');
+    const addressField = document.getElementById('addressField');
+    const clientName = document.getElementById('clientName');
+    const clientPhone = document.getElementById('clientPhone');
+    const clientAddress = document.getElementById('clientAddress');
+    const confirmationModal = document.getElementById('confirmationModal');
+    const confirmOrderBtn = document.getElementById('confirmOrder');
+    const cancelOrderBtn = document.getElementById('cancelOrder');
+
+    // Обработчик для поля телефона (фиксированная 7)
+    clientPhone.addEventListener('input', function() {
+      if (!this.value.startsWith('7')) {
+        this.value = '7' + this.value.replace(/[^0-9]/g, '');
+      } else {
+        this.value = '7' + this.value.slice(1).replace(/[^0-9]/g, '');
+      }
+    });
+
+    // Обновление отображения корзины
+    function updateCart() {
+      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+      cartCount.textContent = totalItems;
+      
+      if (cart.length === 0) {
+        cartContent.innerHTML = '<div class="cart-empty">Корзина пуста</div>';
+        orderSubtotal.textContent = '0 ₽';
+        orderTotal.textContent = '0 ₽';
+        submitBtn.disabled = true;
+        return;
+      }
+      
+      let itemsHTML = '';
+      let subtotal = 0;
+      
+      cart.forEach(item => {
+        subtotal += item.price * item.quantity;
+        
+        itemsHTML += `
+          <div class="cart-item" data-id="${item.id}">
+            <div class="item-info">
+              <div class="item-name">${item.name}</div>
+              <div class="item-price">${item.price} ₽ × ${item.quantity} = ${item.price * item.quantity} ₽</div>
+            </div>
+            <div class="item-controls">
+              <button class="quantity-btn minus" data-id="${item.id}">-</button>
+              <span class="item-quantity">${item.quantity}</span>
+              <button class="quantity-btn plus" data-id="${item.id}">+</button>
+            </div>
+          </div>
+        `;
+      });
+      
+      cartContent.innerHTML = itemsHTML;
+      orderSubtotal.textContent = subtotal + ' ₽';
+      updateOrderTotal();
+      
+      localStorage.setItem('tilda-cart', JSON.stringify(cart));
+      
+      document.querySelectorAll('.quantity-btn.minus').forEach(btn => {
+        btn.addEventListener('click', () => changeQuantity(btn.dataset.id, -1));
+      });
+      
+      document.querySelectorAll('.quantity-btn.plus').forEach(btn => {
+        btn.addEventListener('click', () => changeQuantity(btn.dataset.id, 1));
+      });
+      
+      validateForm();
+    }
+    
+    // Обновление итоговой суммы
+    function updateOrderTotal() {
+      const subtotalText = orderSubtotal.textContent;
+      const subtotal = parseInt(subtotalText.replace(/[^\d]/g, '')) || 0;
+      
+      let total = subtotal;
+      
+      if (deliveryMethod.value === 'courier') {
+        total += deliveryCost;
+      }
+      
+      orderTotal.textContent = total + ' ₽';
+      
+      validateForm();
+    }
+    
+    // Добавление товара в корзину
+    function addToCart(productId, productName, productPrice, productImage = '') {
+      const existingItem = cart.find(item => item.id === productId);
+      
+      if (existingItem) {
+        existingItem.quantity += 1;
+      } else {
+        cart.push({
+          id: productId,
+          name: productName,
+          price: productPrice,
+          image: productImage,
+          quantity: 1
+        });
+      }
+      
+      updateCart();
+      
+      cartBtn.style.transform = 'scale(1.2)';
+      setTimeout(() => {
+        cartBtn.style.transform = 'scale(1)';
+      }, 300);
+    }
+    
+    // Изменение количества товара
+    function changeQuantity(productId, delta) {
+      const item = cart.find(item => item.id === productId);
+      
+      if (item) {
+        item.quantity += delta;
+        
+        if (item.quantity <= 0) {
+          cart = cart.filter(item => item.id !== productId);
+        }
+        
+        updateCart();
+      }
+    }
+    
+    // Валидация формы
+    function validateForm() {
+      let isValid = true;
+      
+      if (!clientName.value.trim()) {
+        document.getElementById('nameError').style.display = 'block';
+        isValid = false;
+      } else {
+        document.getElementById('nameError').style.display = 'none';
+      }
+      
+      const phoneRegex = /^7\d{10}$/;
+      if (!phoneRegex.test(clientPhone.value)) {
+        document.getElementById('phoneError').style.display = 'block';
+        isValid = false;
+      } else {
+        document.getElementById('phoneError').style.display = 'none';
+      }
+      
+      if (deliveryMethod.value === 'courier' && !clientAddress.value.trim()) {
+        document.getElementById('addressError').style.display = 'block';
+        isValid = false;
+      } else {
+        document.getElementById('addressError').style.display = 'none';
+      }
+      
+      if (cart.length === 0) {
+        isValid = false;
+      }
+      
+      submitBtn.disabled = !isValid;
+      return isValid;
+    }
+    
+    // Показ/скрытие модального окна
+    function showConfirmation() {
+      confirmationModal.style.display = 'flex';
+    }
+    
+    function hideConfirmation() {
+      confirmationModal.style.display = 'none';
+    }
+    
+    // Получение названия способа оплаты
+    function getPaymentMethodName(method) {
+      switch(method) {
+        case 'cash': return 'Наличные';
+        case 'card': return 'Картой';
+        case 'qr': return 'QR-код';
+        default: return method;
+      }
+    }
+    
+    // Оформление заказа
+    function submitOrder() {
+      if (!validateForm()) {
+        alert('Пожалуйста, заполните все обязательные поля корректно');
+        return;
+      }
+      
+      showConfirmation();
+    }
+    
+    // Отправка заказа
+    function processOrder() {
+      const order = {
+        name: clientName.value.trim(),
+        phone: clientPhone.value.trim(),
+        address: deliveryMethod.value === 'courier' ? clientAddress.value.trim() : 'Самовывоз',
+        comment: document.getElementById('clientComment').value.trim(),
+        paymentMethod: document.querySelector('input[name="payment"]:checked').value,
+        deliveryMethod: deliveryMethod.value,
+        deliveryCost: deliveryCost,
+        deliveryZone: deliveryZone,
+        items: cart.map(item => ({
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          total: item.price * item.quantity
+        })),
+        subtotal: parseInt(orderSubtotal.textContent.replace(/[^\d]/g, '')),
+        total: parseInt(orderTotal.textContent.replace(/[^\d]/g, ''))
+      };
+
+      // Отправка в Telegram
+      const telegramMessage = `
+<b>Новый заказ!</b> ????
+<b>Имя:</b> ${order.name}
+<b>Телефон:</b> ${order.phone}
+<b>Адрес:</b> ${order.address}
+<b>Способ оплаты:</b> ${getPaymentMethodName(order.paymentMethod)}
+<b>Способ получения:</b> ${order.deliveryMethod === 'courier' ? 'Доставка' : 'Самовывоз'}
+<b>Комментарий:</b> ${order.comment || 'нет'}
+
+<b>Заказанные блюда:</b>
+${order.items.map(item => `- ${item.name} (${item.price} ₽) × ${item.quantity} = ${item.total} ₽`).join('\n')}
+
+<b>Итого к оплате:</b> ${order.total} ₽
+      `;
+
+      const botToken = 'YOUR_BOT_TOKEN';
+      const chatId = 'YOUR_CHAT_ID';
+      const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(telegramMessage)}&parse_mode=HTML`;
+
+      fetch(telegramUrl)
+        .then(response => {
+          if (!response.ok) throw new Error('Ошибка отправки в Telegram');
+        })
+        .catch(error => console.error('Ошибка Telegram:', error));
+
+      // Отправка в Tilda CRM
+      const tildaFormData = new FormData();
+      tildaFormData.append('name', order.name);
+      tildaFormData.append('phone', order.phone);
+      tildaFormData.append('delivery', order.deliveryMethod === 'courier' ? 'Доставка' : 'Самовывоз');
+      tildaFormData.append('address', order.address);
+      tildaFormData.append('payment', getPaymentMethodName(order.paymentMethod));
+      tildaFormData.append('comment', order.comment || 'Нет комментария');
+      tildaFormData.append('total', `${order.total} ₽`);
+      
+      order.items.forEach((item, index) => {
+        tildaFormData.append(`item${index + 1}`, `${item.name} (${item.price} ₽) × ${item.quantity} = ${item.total} ₽`);
+      });
+
+      fetch('YOUR_WEBHOOK_URL', {
+        method: 'POST',
+        body: tildaFormData
+      })
+      .then(response => {
+        if (!response.ok) throw new Error('Ошибка отправки в Tilda CRM');
+      })
+      .catch(error => console.error('Ошибка Tilda CRM:', error));
+
+      // Очистка корзины
+      cart = [];
+      updateCart();
+      localStorage.removeItem('tilda-cart');
+      
+      // Сброс формы
+      clientName.value = '';
+      clientPhone.value = '7'; // Возвращаем начальное значение
+      clientAddress.value = '';
+      document.getElementById('clientComment').value = '';
+      
+      cartModule.classList.remove('open');
+      hideConfirmation();
+      
+      alert('Спасибо за заказ! Наш менеджер свяжется с вами для подтверждения.');
+    }
+
+    // Обработчик кликов по кнопкам "В корзину" в Tilda
+    function handleAddToCartClick(e) {
+      const btn = e.target.closest(
+        '.js-store-prodbtn-addtocart, .t-store__btn-add-to-cart, .t-store__btn-addtocart, .t-store-prod__btn, .t-store__card__btn'
+      );
+      
+      if (!btn) return;
+      
+      const card = btn.closest(
+        '.js-store-proditem, .t-store__card, .t-store-prod, .t-store__card-wrapper'
+      );
+      
+      if (!card) return;
+      
+      const productId = card.dataset.productid || card.id || Math.random().toString(36).substr(2, 9);
+      
+      let productName = 'Товар';
+      const nameEl = card.querySelector(
+        '.js-store-prodtitle, .t-store__prodtitle, .t-store__card__title, .t-store-prod__title, .t-title, .t-name'
+      );
+      if (nameEl) productName = nameEl.textContent.trim();
+      
+      let productPrice = 0;
+      const priceEl = card.querySelector(
+        '.js-product-price, .t-store__price-value, .t-store__card__price, .t-store-prod__price, .t-price'
+      );
+      
+      if (priceEl) {
+        const priceText = priceEl.textContent.replace(/\s/g, '');
+        productPrice = parseInt(priceText.replace(/[^\d]/g, '')) || 0;
+      }
+      
+      addToCart(productId, productName, productPrice);
+    }
+
+    // Инициализация
+    updateCart();
+    
+    // Обработчики событий
+    cartBtn.addEventListener('click', () => {
+      cartModule.classList.add('open');
+    });
+    
+    closeBtn.addEventListener('click', () => {
+      cartModule.classList.remove('open');
+    });
+    
+    submitBtn.addEventListener('click', submitOrder);
+    confirmOrderBtn.addEventListener('click', processOrder);
+    cancelOrderBtn.addEventListener('click', hideConfirmation);
+    
+    deliveryMethod.addEventListener('change', function() {
+      if (this.value === 'pickup') {
+        addressField.style.display = 'none';
+        deliveryCost = 0;
+      } else {
+        addressField.style.display = 'block';
+        deliveryCost = 0;
+      }
+      updateOrderTotal();
+    });
+    
+    clientName.addEventListener('input', validateForm);
+    clientPhone.addEventListener('input', validateForm);
+    clientAddress.addEventListener('input', validateForm);
+    
+    document.addEventListener('click', handleAddToCartClick);
+    
+    const observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.addedNodes.length) {
+          document.addEventListener('click', handleAddToCartClick);
+        }
+      });
+    });
+    
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  });
+</script>
+</body>
+</html>
