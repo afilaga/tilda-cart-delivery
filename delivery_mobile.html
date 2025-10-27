@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Корзина — мобильная версия</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(145deg, #eef1f8 0%, #e2e6f2 45%, #d7dcec 100%);
+      --glass-white: rgba(255, 255, 255, 0.85);
+      --glass-soft: rgba(255, 255, 255, 0.35);
+      --text-main: rgba(28, 32, 38, 0.95);
+      --text-muted: rgba(28, 32, 38, 0.65);
+      --border-glass: 1px solid rgba(255, 255, 255, 0.4);
+      --shadow-soft: 0 14px 40px rgba(20, 28, 40, 0.20);
+      --shadow-button: 0 4px 15px rgba(0, 0, 0, 0.12);
+      --accent: rgba(227, 204, 179, 0.85);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: inherit;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      padding: 24px;
+    }
+
+    body.cart-locked {
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .page-ambient {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.45), transparent 45%),
+                  radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.35), transparent 55%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .cart-button {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 64px;
+      height: 64px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.42);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #222;
+      box-shadow: var(--shadow-button);
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+      z-index: 20;
+    }
+
+    .cart-button:hover {
+      transform: translateY(-2px) scale(1.03);
+      background: rgba(255, 255, 255, 0.38);
+      box-shadow: 0 10px 30px rgba(110, 120, 150, 0.28);
+    }
+
+    .cart-button__icon {
+      width: 26px;
+      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cart-button__icon svg {
+      width: 100%;
+      height: 100%;
+      fill: none;
+      stroke: #222;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .cart-button__count {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+    }
+
+    .cart-button__label {
+      position: absolute;
+      bottom: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.4px;
+      color: rgba(20, 26, 32, 0.6);
+    }
+
+    .cart-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(9, 12, 20, 0.4);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0;
+      z-index: 15;
+    }
+
+    .cart-overlay.active {
+      display: flex;
+    }
+
+    .cart-content {
+      width: 100%;
+      max-width: 520px;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border-radius: 28px 28px 0 0;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      transform: translateY(100%);
+      transition: transform 0.4s ease;
+      max-height: 90vh;
+    }
+
+    .cart-overlay.active .cart-content {
+      transform: translateY(0);
+    }
+
+    .cart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      position: sticky;
+      top: 0;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+      z-index: 5;
+    }
+
+    .cart-header h2 {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+    }
+
+    .cart-close {
+      background: none;
+      border: 0;
+      font-size: 28px;
+      font-weight: 500;
+      color: rgba(32, 38, 46, 0.7);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .cart-close:hover {
+      background: rgba(0, 0, 0, 0.06);
+      color: rgba(32, 38, 46, 0.85);
+    }
+
+    .cart-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      gap: 24px;
+      padding-bottom: 24px;
+      scroll-behavior: smooth;
+      scrollbar-width: thin;
+    }
+
+    .cart-body::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .cart-body::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.12);
+      border-radius: 999px;
+    }
+
+    .cart-items {
+      padding: 16px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .cart-empty {
+      padding: 48px 0 60px;
+      text-align: center;
+      font-size: 15px;
+      color: var(--text-muted);
+      letter-spacing: 0.2px;
+    }
+
+    .cart-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 0 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .item-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .item-name {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-main);
+      letter-spacing: 0.2px;
+    }
+
+    .item-price {
+      font-size: 14px;
+      color: rgba(28, 32, 38, 0.6);
+    }
+
+    .item-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .quantity-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      background: rgba(255, 255, 255, 0.4);
+      color: rgba(32, 38, 46, 0.85);
+      font-size: 20px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .quantity-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.52);
+    }
+
+    .item-quantity {
+      min-width: 32px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .delivery-section {
+      padding: 0 24px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .delivery-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 16px 18px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      font-size: 15px;
+      font-weight: 500;
+      color: rgba(28, 32, 38, 0.9);
+      cursor: pointer;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    }
+
+    .delivery-toggle:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.5);
+      box-shadow: 0 16px 32px rgba(110, 130, 160, 0.24);
+    }
+
+    .delivery-toggle__chevron {
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.25s ease;
+    }
+
+    .delivery-toggle__chevron svg {
+      width: 100%;
+      height: 100%;
+      fill: none;
+      stroke: rgba(28, 32, 38, 0.75);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .delivery-toggle__chevron.rotated {
+      transform: rotate(180deg);
+    }
+
+    .delivery-panel {
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      background: rgba(255, 255, 255, 0.32);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      transition: max-height 0.4s ease, opacity 0.3s ease;
+    }
+
+    .delivery-panel.open {
+      max-height: 520px;
+      opacity: 1;
+    }
+
+    .delivery-panel__inner {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 18px 18px 20px;
+    }
+
+    .delivery-map {
+      position: relative;
+      width: 100%;
+      height: 260px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .delivery-map__placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      font-size: 14px;
+      color: rgba(28, 32, 38, 0.6);
+      background: repeating-linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.28),
+        rgba(255, 255, 255, 0.28) 12px,
+        rgba(255, 255, 255, 0.38) 12px,
+        rgba(255, 255, 255, 0.38) 24px
+      );
+    }
+
+    .delivery-note {
+      font-size: 13px;
+      line-height: 1.45;
+      color: rgba(28, 32, 38, 0.65);
+    }
+
+    .delivery-panel__info {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .delivery-panel__zone {
+      font-size: 14px;
+      color: rgba(28, 32, 38, 0.72);
+    }
+
+    .delivery-panel__reset {
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      background: rgba(255, 255, 255, 0.36);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .delivery-panel__reset:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.46);
+    }
+
+    .form-section {
+      padding: 0 24px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(28, 32, 38, 0.7);
+      letter-spacing: 0.2px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      background: rgba(255, 255, 255, 0.5);
+      font-size: 15px;
+      line-height: 1.4;
+      color: var(--text-main);
+      transition: border 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: rgba(227, 204, 179, 0.8);
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: 0 0 0 4px rgba(227, 204, 179, 0.25);
+    }
+
+    .form-control--textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .error-message {
+      font-size: 12px;
+      color: #ff6f6f;
+      display: none;
+    }
+
+    .helper-note {
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: rgba(28, 32, 38, 0.65);
+      background: rgba(255, 255, 255, 0.32);
+      border-radius: 16px;
+      padding: 12px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .radio-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .radio-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      background: rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+      min-height: 44px;
+      transition: border 0.2s ease, background 0.2s ease;
+    }
+
+    .radio-option input {
+      width: 18px;
+      height: 18px;
+      accent-color: rgba(227, 204, 179, 0.85);
+    }
+
+    .radio-option:hover {
+      border-color: rgba(227, 204, 179, 0.75);
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .cart-footer {
+      margin-top: auto;
+      padding: 16px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-top: 1px solid rgba(255, 255, 255, 0.6);
+      position: sticky;
+      bottom: 0;
+    }
+
+    .cart-summary {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 15px;
+      color: var(--text-muted);
+    }
+
+    .summary-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .summary-row span:last-child {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .cart-total {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .cart-total span:last-child {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .checkout-btn {
+      width: 100%;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      background: rgba(255, 255, 255, 0.28);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: rgba(18, 20, 24, 0.85);
+      box-shadow: 0 18px 36px rgba(120, 132, 160, 0.25);
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+    }
+
+    .checkout-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.38);
+      box-shadow: 0 24px 48px rgba(110, 130, 160, 0.28);
+    }
+
+    .checkout-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+      box-shadow: none;
+    }
+
+    .confirmation-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(12, 18, 28, 0.45);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 12000;
+      padding: 20px;
+    }
+
+    .confirmation-modal.open {
+      display: flex;
+    }
+
+    .confirmation-content {
+      width: min(90vw, 340px);
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 26px 24px;
+      box-shadow: 0 24px 50px rgba(20, 28, 40, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      text-align: center;
+    }
+
+    .confirmation-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .confirmation-message {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.45;
+      margin: 0;
+    }
+
+    .confirmation-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .confirmation-btn {
+      padding: 10px 22px;
+      border-radius: 999px;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .confirmation-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .confirmation-confirm {
+      background: rgba(227, 204, 179, 0.95);
+      color: rgba(26, 28, 30, 0.9);
+      box-shadow: 0 16px 30px rgba(227, 204, 179, 0.35);
+    }
+
+    .confirmation-cancel {
+      background: rgba(240, 242, 248, 0.95);
+      color: rgba(28, 32, 38, 0.65);
+      box-shadow: 0 12px 24px rgba(20, 28, 40, 0.20);
+    }
+
+    @media (max-width: 520px) {
+      body {
+        padding: 0;
+      }
+
+      .cart-button {
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+      }
+
+      .cart-button__label {
+        display: none;
+      }
+
+      .cart-overlay {
+        inset: 0;
+        padding: 0;
+        z-index: 9999;
+      }
+
+      .cart-content {
+        border-radius: 28px 28px 0 0;
+        width: 100%;
+        max-width: none;
+        height: 90vh;
+        max-height: 90vh;
+      }
+
+      .cart-header,
+      .cart-footer {
+        padding-inline: 20px;
+      }
+
+      .cart-items {
+        padding: 16px 20px 24px;
+      }
+
+      .form-section {
+        padding: 0 20px 32px;
+      }
+
+      .delivery-section {
+        padding: 0 20px 24px;
+      }
+
+      .delivery-panel.open {
+        max-height: 480px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-ambient" aria-hidden="true"></div>
+
+  <button class="cart-button" id="cartBtn" type="button" aria-haspopup="dialog" aria-expanded="false">
+    <span class="cart-button__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M7 4h-2l-1 2h2l3.6 7.6-1.4 2.4A1 1 0 0 0 9.2 18H19v-2H9.4l.1-.2L10.6 14H16a1 1 0 0 0 .9-.6L20.8 6.5a.5.5 0 0 0-.5-.5H8.2L7.3 4zM9 20a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm9 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+      </svg>
+    </span>
+    <span class="cart-button__label">Корзина</span>
+    <span class="cart-button__count" id="cartCount">0</span>
+  </button>
+
+  <div class="cart-overlay" id="cartOverlay" aria-hidden="true">
+    <div class="cart-content" id="cartContent" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
+      <header class="cart-header">
+        <h2 id="cartTitle">Корзина</h2>
+        <button class="cart-close" id="closeCart" type="button" aria-label="Закрыть корзину">×</button>
+      </header>
+
+      <div class="cart-body">
+        <div class="cart-items" id="cartItems">
+          <div class="cart-empty">Добавьте блюда из меню — они появятся здесь.</div>
+        </div>
+
+        <section class="delivery-section" aria-labelledby="deliveryToggleLabel">
+          <button class="delivery-toggle" id="deliveryToggle" type="button" aria-expanded="false">
+            <span id="deliveryToggleLabel">Показать зоны доставки</span>
+            <span class="delivery-toggle__chevron" aria-hidden="true">
+              <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <polyline points="5 8 10 13 15 8" />
+              </svg>
+            </span>
+          </button>
+
+          <div class="delivery-panel" id="deliveryPanel" aria-hidden="true">
+            <div class="delivery-panel__inner">
+              <div class="delivery-map" id="deliveryMap">
+                <div class="delivery-map__placeholder" id="deliveryMapPlaceholder">
+                  Карта появится после загрузки Яндекс.Карт. Нажмите кнопку выше, чтобы открыть.
+                </div>
+              </div>
+              <div class="delivery-panel__info">
+                <span class="delivery-panel__zone" id="deliveryZoneInfo">Зона доставки не выбрана.</span>
+                <button class="delivery-panel__reset" id="resetZoneBtn" type="button">Сбросить зону</button>
+              </div>
+              <p class="delivery-note">
+                Отмечаем зоны доставки, чтобы вы видели ориентировочную стоимость. После подключения ассортимента добавим автоматический расчёт.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="form-section" aria-label="Данные для доставки">
+          <div class="form-group">
+            <label class="form-label" for="clientName">Имя *</label>
+            <input class="form-control" id="clientName" type="text" placeholder="Как к вам обращаться" autocomplete="name" inputmode="text">
+            <span class="error-message" id="nameError">Укажите имя</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="clientPhone">Телефон *</label>
+            <input class="form-control" id="clientPhone" type="tel" value="7" placeholder="7XXXXXXXXXX" autocomplete="tel" inputmode="tel" maxlength="11">
+            <span class="error-message" id="phoneError">Введите номер из 11 цифр, начиная с 7</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="deliveryMethod">Способ получения</label>
+            <select class="form-control" id="deliveryMethod">
+              <option value="courier">Доставка курьером</option>
+              <option value="pickup">Самовывоз</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="addressField">
+            <label class="form-label" for="clientAddress">Адрес доставки *</label>
+            <input class="form-control" id="clientAddress" type="text" placeholder="Улица, дом, квартира" autocomplete="street-address">
+            <span class="error-message" id="addressError">Укажите адрес доставки</span>
+          </div>
+
+          <p class="helper-note" id="mapHelperNote">
+            Выберите район на карте или укажите адрес — мы подсветим зону доставки и уточним стоимость перед отправкой курьера.
+          </p>
+
+          <div class="form-group">
+            <span class="form-label">Способ оплаты</span>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="payment" value="cash" checked>
+                <span>Наличные</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="payment" value="card">
+                <span>Картой</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="payment" value="qr">
+                <span>QR-код</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="clientComment">Комментарий к заказу</label>
+            <textarea class="form-control form-control--textarea" id="clientComment" rows="3" placeholder="Пожелания, удобное время доставки"></textarea>
+          </div>
+        </section>
+      </div>
+
+      <footer class="cart-footer">
+        <div class="cart-summary">
+          <div class="summary-row">
+            <span>Сумма заказа</span>
+            <span id="orderSubtotal">0 ₽</span>
+          </div>
+          <div class="summary-row">
+            <span>Доставка</span>
+            <span id="deliveryCostLabel">Уточним при подтверждении</span>
+          </div>
+        </div>
+        <div class="cart-total">Итого: <span id="orderTotal">0 ₽</span></div>
+        <button class="checkout-btn" id="submitOrder" type="button" disabled>Оформить заказ</button>
+      </footer>
+    </div>
+  </div>
+
+  <div class="confirmation-modal" id="confirmationModal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="confirmation-content">
+      <h3 class="confirmation-title">Подтвердить заказ?</h3>
+      <p class="confirmation-message">Менеджер перезвонит, чтобы уточнить детали и стоимость доставки.</p>
+      <div class="confirmation-actions">
+        <button class="confirmation-btn confirmation-cancel" id="cancelOrder" type="button">Отмена</button>
+        <button class="confirmation-btn confirmation-confirm" id="confirmOrder" type="button">Да, оформить</button>
+      </div>
+    </div>
+  </div>
+<script src="./cart_mobile.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Корзина с доставкой</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --main-color: rgba(161, 132, 108, 0.8);
+      --second-color: rgba(212, 180, 131, 0.8);
+      --accent-color: rgba(255, 255, 255, 0.24);
+      --bg-gradient: linear-gradient(135deg, #f6f7fb 0%, #eceff5 45%, #dee2ec 100%);
+      --bg-color: #eef1f8;
+      --text-color: rgba(32, 37, 43, 0.9);
+      --text-soft: rgba(32, 37, 43, 0.6);
+      --panel-color: rgba(255, 255, 255, 0.42);
+      --glass-border: 1px solid rgba(255, 255, 255, 0.32);
+      --glass-shadow: 0 40px 80px rgba(99, 109, 129, 0.25);
+      --glass-blur: blur(26px);
+      --button-gradient: linear-gradient(135deg, rgba(227, 204, 179, 0.95), rgba(199, 171, 142, 0.95));
+      --error-color: #ff7070;
+    }
+
+    * {
+      font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+      box-sizing: border-box;
+      color: inherit;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: var(--bg-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      color: var(--text-color);
+    }
+
+    body, input, textarea, button, select {
+      font-weight: 300;
+    }
+
+    .glass-layer {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.04));
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .cart-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 60px;
+      height: 60px;
+      background: var(--button-gradient);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+      z-index: 1000;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+      outline: none;
+    }
+    
+    .cart-btn:hover {
+      transform: scale(1.1);
+      background: linear-gradient(135deg, rgba(212, 180, 131, 0.95), rgba(255, 240, 215, 0.9));
+      box-shadow: 0 18px 36px rgba(0, 0, 0, 0.5);
+    }
+    
+    .cart-icon {
+      width: 24px;
+      height: 24px;
+      fill: white;
+    }
+    
+    .cart-badge-label {
+      position: absolute;
+      bottom: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: rgba(24, 28, 34, 0.75);
+      font-weight: 400;
+      letter-spacing: 0.4px;
+    }
+
+    .cart-count {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--text-color);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 500;
+      border: 2px solid rgba(255, 255, 255, 0.55);
+    }
+    
+    .cart-module {
+      position: fixed;
+      top: 50%;
+      right: 40px;
+      transform: translateY(-50%) scale(0.94);
+      width: min(92vw, 420px);
+      height: auto;
+      max-height: calc(100vh - 120px);
+      background: rgba(255, 255, 255, 0.36);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border-radius: 28px;
+      border: var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      z-index: 1001;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      opacity: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .cart-module.open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(-50%) scale(1);
+    }
+    
+    .cart-header {
+      padding: 22px;
+      background: rgba(255, 255, 255, 0.18);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+      border-bottom: var(--glass-border);
+    }
+    
+    .cart-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 400;
+      letter-spacing: 0.3px;
+    }
+    
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-soft);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px;
+      transition: transform 0.2s ease;
+    }
+
+    .close-btn:hover {
+      transform: rotate(90deg);
+    }
+    
+    .cart-scroll-container {
+      flex: 1;
+      overflow-y: auto;
+      padding-bottom: 20px;
+    }
+    
+    .cart-content {
+      padding: 18px;
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+    }
+    
+    .cart-empty {
+      text-align: center;
+      padding: 40px 0;
+      color: var(--text-soft);
+    }
+    
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .item-info {
+      flex: 1;
+    }
+    
+    .item-name {
+      font-weight: 400;
+      margin-bottom: 4px;
+      color: var(--text-color);
+    }
+    
+    .item-price {
+      color: var(--main-color);
+      font-size: 14px;
+    }
+    
+    .item-controls {
+      display: flex;
+      align-items: center;
+    }
+    
+    .quantity-btn {
+      width: 28px;
+      height: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: rgba(255, 255, 255, 0.18);
+      border-radius: 50%;
+      cursor: pointer;
+      color: rgba(32, 32, 34, 0.75);
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .quantity-btn:hover {
+      background: rgba(255, 255, 255, 0.28);
+      transform: translateY(-1px);
+    }
+    
+    .item-quantity {
+      margin: 0 10px;
+      min-width: 20px;
+      text-align: center;
+    }
+    
+    .cart-footer {
+      padding: 18px 20px 22px;
+      border-top: var(--glass-border);
+      background: rgba(255, 255, 255, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    
+    .order-summary {
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    
+    .summary-label {
+      color: var(--text-color);
+      opacity: 0.75;
+    }
+    
+    .summary-value {
+      font-weight: 500;
+      color: rgba(26, 31, 37, 0.9);
+      text-shadow: 0 3px 10px rgba(255, 255, 255, 0.12);
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    
+    .form-label {
+      font-weight: 500;
+      color: var(--text-color);
+      opacity: 0.85;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 10px 15px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      font-size: 14px;
+      background: rgba(255, 255, 255, 0.22);
+      color: rgba(25, 25, 29, 0.9);
+      transition: border 0.2s ease, background-color 0.2s ease;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: rgba(212, 180, 131, 0.6);
+      background: rgba(255, 255, 255, 0.12);
+    }
+    
+    select.form-control {
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 16px;
+      padding-right: 38px;
+    }
+    
+    .radio-group {
+      display: flex;
+      gap: 15px;
+      margin-top: 5px;
+    }
+    
+    .radio-option {
+      display: flex;
+      align-items: center;
+    }
+    
+    .radio-option input {
+      margin-right: 5px;
+    }
+    
+    .error-message {
+      color: var(--error-color);
+      font-size: 12px;
+      margin-top: 5px;
+      display: none;
+    }
+    
+    .delivery-map-container {
+      margin: 15px 0;
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 22px;
+      padding: 16px 18px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 28px 50px rgba(0, 0, 0, 0.28);
+    }
+    
+    .delivery-map-title {
+      font-weight: 500;
+      margin-bottom: 10px;
+      color: var(--text-color);
+      text-align: center;
+      opacity: 0.85;
+      letter-spacing: 0.4px;
+    }
+    
+    .delivery-map {
+      height: 400px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 10px;
+      position: relative;
+    }
+
+    .delivery-map-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      color: rgba(42, 46, 54, 0.55);
+      background: repeating-linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.15) 12px, rgba(255,255,255,0.22) 12px, rgba(255,255,255,0.22) 24px);
+      font-size: 14px;
+    }
+    
+    .delivery-zones-info {
+      font-size: 13px;
+      color: var(--text-color);
+      margin-top: 5px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .zone-alert {
+      color: var(--error-color);
+    }
+
+    .reset-zone-btn {
+      align-self: flex-start;
+      padding: 6px 18px;
+      background: rgba(255, 255, 255, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+      color: rgba(28, 32, 36, 0.75);
+      transition: all 0.2s ease;
+    }
+
+    .reset-zone-btn:hover {
+      background: rgba(255, 255, 255, 0.32);
+      border-color: rgba(212, 180, 131, 0.45);
+    }
+    
+    .submit-btn {
+      align-self: center;
+      padding: 12px 34px;
+      background: var(--button-gradient);
+      color: rgba(26, 26, 28, 0.92);
+      border: none;
+      border-radius: 999px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      margin-top: 4px;
+      font-weight: 500;
+      box-shadow: 0 20px 40px rgba(161, 132, 108, 0.32);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .submit-btn:hover {
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 0 32px 56px rgba(161, 132, 108, 0.36);
+    }
+    
+    .submit-btn:disabled {
+      background: rgba(180, 180, 185, 0.55);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    
+    .confirmation-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1002;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .confirmation-content {
+      background: rgba(255, 255, 255, 0.94);
+      padding: 25px;
+      border-radius: 18px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+    
+    .confirmation-title {
+      font-size: 20px;
+      margin-bottom: 15px;
+      color: var(--text-color);
+    }
+    
+    .confirmation-message {
+      margin-bottom: 20px;
+      color: var(--text-color);
+    }
+    
+    .confirmation-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    
+    .confirmation-btn {
+      padding: 10px 20px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    
+    .confirmation-confirm {
+      background: var(--button-gradient);
+      color: rgba(26, 26, 28, 0.92);
+    }
+    
+    .confirmation-cancel {
+      background: rgba(240, 242, 248, 0.9);
+      color: var(--text-soft);
+    }
+    
+    @media (max-width: 520px) {
+      .cart-module {
+        right: 20px;
+        left: 20px;
+        width: calc(100% - 40px);
+        max-width: none;
+        top: 18px;
+        transform: translateY(0) scale(0.96);
+        max-height: calc(100vh - 36px);
+      }
+
+      .cart-module.open {
+        transform: translateY(0) scale(1);
+      }
+
+      .cart-btn {
+        width: 56px;
+        height: 56px;
+        bottom: 18px;
+        right: 18px;
+      }
+
+      .cart-icon {
+        width: 22px;
+        height: 22px;
+      }
+
+      .radio-group {
+        flex-direction: column;
+        gap: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Кнопка корзины -->
+<button class="cart-btn" id="cartBtn" aria-label="Корзина">
+  <svg class="cart-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M7 4h-2l-1 2h2l3.6 7.59-1.35 2.44A1 1 0 0 0 9.14 18H19v-2H9.42l.1-.16L10.55 14H16a1 1 0 0 0 .93-.63L20.75 6.5A.5.5 0 0 0 20.31 6H8.21l-.94-2zM9 20a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm9 0a2 2 0 1 0 .001 3.999A2 2 0 0 0 18 20z"/>
+  </svg>
+  <span class="cart-count" id="cartCount">0</span>
+  <span class="cart-badge-label">Корзина</span>
+</button>
+
+<!-- Модуль корзины -->
+<div class="cart-module" id="cartModule">
+  <div class="cart-header">
+    <h2 class="cart-title">Ваш заказ</h2>
+    <button class="close-btn" id="closeCart">×</button>
+  </div>
+  
+  <div class="cart-scroll-container">
+    <div class="cart-content" id="cartContent">
+      <div class="cart-empty">Корзина пуста</div>
+    </div>
+    
+    <div class="cart-footer">
+      <div class="order-summary">
+        <div class="summary-row">
+          <span class="summary-label">Сумма заказа:</span>
+          <span class="summary-value" id="orderSubtotal">0 ₽</span>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label" for="clientName">Имя *</label>
+        <input type="text" class="form-control" id="clientName" placeholder="Ваше имя" required>
+        <div class="error-message" id="nameError">Пожалуйста, укажите имя</div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label" for="clientPhone">Телефон *</label>
+        <input type="tel" class="form-control" id="clientPhone" placeholder="7XXXXXXXXXX" value="7" required>
+        <div class="error-message" id="phoneError">Укажите корректный телефон (10 цифр после 7)</div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label" for="deliveryMethod">Способ получения</label>
+        <select class="form-control" id="deliveryMethod">
+          <option value="courier">Доставка курьером</option>
+          <option value="pickup">Самовывоз</option>
+        </select>
+      </div>
+      
+      <div class="form-group" id="addressField">
+        <label class="form-label" for="clientAddress">Адрес доставки *</label>
+        <input type="text" class="form-control" id="clientAddress" placeholder="Улица, дом, квартира">
+        <div class="error-message" id="addressError">Укажите адрес доставки</div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Способ оплаты</label>
+        <div class="radio-group">
+          <label class="radio-option">
+            <input type="radio" name="payment" value="cash" checked> Наличные
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="payment" value="card"> Картой
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="payment" value="qr"> QR-код
+          </label>
+        </div>
+      </div>
+      
+      <!-- Карта доставки (возвращена как было) -->
+      <div class="delivery-map-container" id="mapContainer">
+        <div class="delivery-map-title">Выберите зону доставки на карте</div>
+        <div class="delivery-map" id="deliveryMapCanvas">
+          <div class="delivery-map-placeholder" id="deliveryMapPlaceholder">
+            Чтобы показать карту, укажите API-ключ Яндекс.Карт (см. CONFIG.yandexMapsApiKey)
+          </div>
+        </div>
+        <div class="delivery-zones-info">
+          <span id="deliveryZoneInfo">Зона не выбрана. Доставка будет рассчитана после выбора.</span>
+          <button type="button" class="reset-zone-btn" id="resetZoneBtn">Сбросить зону</button>
+        </div>
+      </div>
+      
+      <div class="summary-row" style="margin-top: 10px;">
+        <span class="summary-label" style="font-size: 16px;">Итого:</span>
+        <span class="summary-value" style="font-size: 18px;" id="orderTotal">0 ₽</span>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label" for="clientComment">Комментарий к заказу</label>
+        <textarea class="form-control" id="clientComment" placeholder="Дополнительные пожелания"></textarea>
+      </div>
+      
+      <button class="submit-btn" id="submitOrder" disabled>Оформить заказ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно подтверждения -->
+<div class="confirmation-modal" id="confirmationModal">
+  <div class="confirmation-content">
+    <h3 class="confirmation-title">Подтверждение заказа</h3>
+    <p class="confirmation-message">Вы уверены, что хотите оформить заказ?</p>
+    <div class="confirmation-buttons">
+      <button class="confirmation-btn confirmation-confirm" id="confirmOrder">Да, оформить</button>
+      <button class="confirmation-btn confirmation-cancel" id="cancelOrder">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const CONFIG = {
+    telegramBotToken: '',
+    telegramChatId: '',
+    makeWebhookUrl: '',
+    yandexMapsApiKey: ''
+  };
+
+  const MAP_CENTER = [43.585474, 39.723123];
+  const deliveryZones = [
+    {
+      id: 'zone-blue',
+      name: 'Синяя зона',
+      cost: 350,
+      color: '#4C7DF0',
+      coordinates: [
+        [43.5935, 39.7090],
+        [43.5935, 39.7320],
+        [43.5790, 39.7320],
+        [43.5790, 39.7090],
+        [43.5935, 39.7090]
+      ]
+    },
+    {
+      id: 'zone-yellow',
+      name: 'Жёлтая зона',
+      cost: 500,
+      color: '#F0B429',
+      coordinates: [
+        [43.6030, 39.6930],
+        [43.6030, 39.7540],
+        [43.5650, 39.7540],
+        [43.5650, 39.6930],
+        [43.6030, 39.6930]
+      ]
+    },
+    {
+      id: 'zone-red',
+      name: 'Красная зона',
+      cost: 700,
+      color: '#E85D5D',
+      coordinates: [
+        [43.6170, 39.6700],
+        [43.6170, 39.7860],
+        [43.5450, 39.7860],
+        [43.5450, 39.6700],
+        [43.6170, 39.6700]
+      ]
+    }
+  ];
+
+  let cart = [];
+  let deliveryCost = 0;
+  let deliveryZone = '';
+  let selectedPolygon = null;
+  let ymapsInstance = null;
+  let mapInitialized = false;
+  let mapScriptLoading = false;
+
+  let cartBtnEl;
+  let cartModuleEl;
+  let closeBtnEl;
+  let cartContentEl;
+  let cartCountEl;
+  let submitBtnEl;
+  let deliveryMethodEl;
+  let addressFieldEl;
+  let clientNameEl;
+  let clientPhoneEl;
+  let clientAddressEl;
+  let clientCommentEl;
+  let confirmationModalEl;
+  let confirmOrderBtnEl;
+  let cancelOrderBtnEl;
+  let orderSubtotalEl;
+  let orderTotalEl;
+  let zoneInfoEl;
+  let resetZoneBtnEl;
+  let mapContainerEl;
+  let mapPlaceholderEl;
+  let nameErrorEl;
+  let phoneErrorEl;
+  let addressErrorEl;
+
+  function hexToRgba(hex, alpha) {
+    const match = hex.replace('#', '').match(/.{1,2}/g);
+    if (!match) return 'rgba(0,0,0,0.2)';
+    const [r, g, b] = match.map(value => parseInt(value, 16));
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  function injectYandexMaps() {
+    if (!CONFIG.yandexMapsApiKey) {
+      if (mapPlaceholderEl) {
+        mapPlaceholderEl.textContent = 'Добавьте API-ключ в CONFIG.yandexMapsApiKey, чтобы активировать карту.';
+      }
+      return Promise.reject(new Error('Yandex Maps API key is not set'));
+    }
+    if (document.getElementById('ymaps-script')) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.id = 'ymaps-script';
+      script.src = `https://api-maps.yandex.ru/2.1/?apikey=${CONFIG.yandexMapsApiKey}&lang=ru_RU`;
+      script.onload = resolve;
+      script.onerror = () => reject(new Error('Failed to load Yandex Maps API'));
+      document.head.appendChild(script);
+    });
+  }
+
+  function updateZoneInfo() {
+    if (!zoneInfoEl) return;
+    if (deliveryMethodEl.value === 'pickup') {
+      zoneInfoEl.textContent = 'Самовывоз: оплата только за заказ.';
+      zoneInfoEl.classList.remove('zone-alert');
+      return;
+    }
+    if (!deliveryZone) {
+      zoneInfoEl.textContent = 'Зона не выбрана. Нажмите на район на карте, чтобы добавить стоимость доставки.';
+      zoneInfoEl.classList.add('zone-alert');
+    } else {
+      zoneInfoEl.textContent = `${deliveryZone}: доставка ${deliveryCost} ₽`;
+      zoneInfoEl.classList.remove('zone-alert');
+    }
+  }
+
+  function selectDeliveryZone(zone, polygon) {
+    deliveryCost = zone.cost;
+    deliveryZone = zone.name;
+    updateZoneInfo();
+    if (selectedPolygon) {
+      selectedPolygon.options.set('fillColor', hexToRgba(selectedPolygon.zoneMeta.color, 0.25));
+      selectedPolygon.options.set('strokeWidth', 2);
+    }
+    selectedPolygon = polygon;
+    selectedPolygon.zoneMeta = zone;
+    selectedPolygon.options.set('fillColor', hexToRgba(zone.color, 0.45));
+    selectedPolygon.options.set('strokeWidth', 3);
+    updateOrderTotal();
+  }
+
+  function resetDeliveryZone() {
+    deliveryCost = 0;
+    deliveryZone = '';
+    if (selectedPolygon) {
+      selectedPolygon.options.set('fillColor', hexToRgba(selectedPolygon.zoneMeta.color, 0.25));
+      selectedPolygon.options.set('strokeWidth', 2);
+    }
+    selectedPolygon = null;
+    updateZoneInfo();
+    updateOrderTotal();
+  }
+
+  function initDeliveryMap() {
+    if (!window.ymaps) {
+      if (mapPlaceholderEl) {
+        mapPlaceholderEl.textContent = 'Не удалось инициализировать карту Яндекс.';
+      }
+      return;
+    }
+    window.ymaps.ready(() => {
+      if (mapInitialized) return;
+      if (mapPlaceholderEl) {
+        mapPlaceholderEl.remove();
+        mapPlaceholderEl = null;
+      }
+      mapInitialized = true;
+      ymapsInstance = new window.ymaps.Map('deliveryMapCanvas', {
+        center: MAP_CENTER,
+        zoom: 11,
+        controls: ['zoomControl']
+      });
+      deliveryZones.forEach(zone => {
+        const polygon = new window.ymaps.Polygon([zone.coordinates], {
+          hintContent: `${zone.name} — ${zone.cost} ₽`
+        }, {
+          fillColor: hexToRgba(zone.color, 0.25),
+          strokeColor: zone.color,
+          strokeWidth: 2,
+          fillOpacity: 0.8,
+          cursor: 'pointer'
+        });
+        polygon.zoneMeta = zone;
+        polygon.events.add('click', () => selectDeliveryZone(zone, polygon));
+        polygon.events.add('mouseenter', () => polygon.options.set('strokeWidth', 3));
+        polygon.events.add('mouseleave', () => {
+          if (selectedPolygon !== polygon) {
+            polygon.options.set('strokeWidth', 2);
+          }
+        });
+        ymapsInstance.geoObjects.add(polygon);
+      });
+    });
+  }
+
+  function startMapIfNeeded() {
+    if (deliveryMethodEl.value !== 'courier') return;
+    if (mapInitialized || mapScriptLoading) return;
+    mapScriptLoading = true;
+    injectYandexMaps()
+      .then(initDeliveryMap)
+      .catch(error => console.warn(error.message));
+  }
+
+  function getPaymentMethodName(method) {
+    switch (method) {
+      case 'cash': return 'Наличные';
+      case 'card': return 'Картой';
+      case 'qr': return 'QR-код';
+      default: return method;
+    }
+  }
+
+  function updateCart() {
+    if (!cartContentEl || !orderSubtotalEl || !cartCountEl) return;
+    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+    cartCountEl.textContent = totalItems;
+
+    if (cart.length === 0) {
+      cartContentEl.innerHTML = '<div class="cart-empty">Корзина пуста</div>';
+      orderSubtotalEl.textContent = '0 ₽';
+      updateOrderTotal();
+      if (submitBtnEl) submitBtnEl.disabled = true;
+      return;
+    }
+
+    let subtotal = 0;
+    const itemsHTML = cart.map(item => {
+      subtotal += item.price * item.quantity;
+      return `
+          <div class="cart-item" data-id="${item.id}">
+            <div class="item-info">
+              <div class="item-name">${item.name}</div>
+              <div class="item-price">${item.price} ₽ × ${item.quantity} = ${item.price * item.quantity} ₽</div>
+            </div>
+            <div class="item-controls">
+              <button class="quantity-btn minus" data-id="${item.id}">-</button>
+              <span class="item-quantity">${item.quantity}</span>
+              <button class="quantity-btn plus" data-id="${item.id}">+</button>
+            </div>
+          </div>
+        `;
+    }).join('');
+
+    cartContentEl.innerHTML = itemsHTML;
+    orderSubtotalEl.textContent = `${subtotal} ₽`;
+    updateOrderTotal();
+    localStorage.setItem('tilda-cart', JSON.stringify(cart));
+
+    cartContentEl.querySelectorAll('.quantity-btn.minus').forEach(btn => {
+      btn.addEventListener('click', () => changeQuantity(btn.dataset.id, -1));
+    });
+    cartContentEl.querySelectorAll('.quantity-btn.plus').forEach(btn => {
+      btn.addEventListener('click', () => changeQuantity(btn.dataset.id, 1));
+    });
+    validateForm();
+  }
+
+  function updateOrderTotal() {
+    if (!orderSubtotalEl || !orderTotalEl) return;
+    const subtotal = parseInt(orderSubtotalEl.textContent.replace(/[^\d]/g, ''), 10) || 0;
+    let total = subtotal;
+    if (deliveryMethodEl.value === 'courier') {
+      total += deliveryCost;
+    }
+    orderTotalEl.textContent = `${total} ₽`;
+    updateZoneInfo();
+    validateForm();
+  }
+
+  function changeQuantity(productId, delta) {
+    const item = cart.find(item => item.id === productId);
+    if (!item) return;
+    item.quantity += delta;
+    if (item.quantity <= 0) {
+      cart = cart.filter(prod => prod.id !== productId);
+    }
+    updateCart();
+  }
+
+  function validateForm() {
+    if (!clientNameEl || !clientPhoneEl || !submitBtnEl) return true;
+    let isValid = true;
+
+    if (!clientNameEl.value.trim()) {
+      nameErrorEl.style.display = 'block';
+      isValid = false;
+    } else {
+      nameErrorEl.style.display = 'none';
+    }
+
+    const phoneRegex = /^7\d{10}$/;
+    if (!phoneRegex.test(clientPhoneEl.value)) {
+      phoneErrorEl.style.display = 'block';
+      isValid = false;
+    } else {
+      phoneErrorEl.style.display = 'none';
+    }
+
+    if (deliveryMethodEl.value === 'courier') {
+      if (!clientAddressEl.value.trim()) {
+        addressErrorEl.style.display = 'block';
+        isValid = false;
+      } else {
+        addressErrorEl.style.display = 'none';
+      }
+      if (!deliveryZone) {
+        isValid = false;
+        zoneInfoEl?.classList.add('zone-alert');
+      }
+    } else {
+      addressErrorEl.style.display = 'none';
+    }
+
+    if (cart.length === 0) {
+      isValid = false;
+    }
+
+    submitBtnEl.disabled = !isValid;
+    return isValid;
+  }
+
+  function showConfirmation() {
+    if (confirmationModalEl) {
+      confirmationModalEl.style.display = 'flex';
+    }
+  }
+
+  function hideConfirmation() {
+    if (confirmationModalEl) {
+      confirmationModalEl.style.display = 'none';
+    }
+  }
+
+  function submitOrder() {
+    if (!validateForm()) {
+      alert('Пожалуйста, заполните все обязательные поля корректно.');
+      return;
+    }
+    showConfirmation();
+  }
+
+  function processOrder() {
+    const paymentInput = document.querySelector('input[name="payment"]:checked');
+    const paymentValue = paymentInput ? paymentInput.value : 'cash';
+
+    const order = {
+      name: clientNameEl.value.trim(),
+      phone: clientPhoneEl.value.trim(),
+      address: deliveryMethodEl.value === 'courier' ? clientAddressEl.value.trim() : 'Самовывоз',
+      comment: clientCommentEl.value.trim(),
+      paymentMethod: paymentValue,
+      deliveryMethod: deliveryMethodEl.value,
+      deliveryCost,
+      deliveryZone,
+      items: cart.map(item => ({
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        total: item.price * item.quantity
+      })),
+      subtotal: parseInt(orderSubtotalEl.textContent.replace(/[^\d]/g, ''), 10) || 0,
+      total: parseInt(orderTotalEl.textContent.replace(/[^\d]/g, ''), 10) || 0
+    };
+
+    const messageLines = [
+      '<b>Новый заказ!</b> 🛒',
+      `<b>Имя:</b> ${order.name}`,
+      `<b>Телефон:</b> ${order.phone}`,
+      `<b>Адрес:</b> ${order.address}`,
+      `<b>Способ оплаты:</b> ${getPaymentMethodName(order.paymentMethod)}`,
+      `<b>Способ получения:</b> ${order.deliveryMethod === 'courier' ? 'Доставка' : 'Самовывоз'}`,
+      `<b>Зона доставки:</b> ${order.deliveryZone || 'не выбрана'}`,
+      `<b>Стоимость доставки:</b> ${order.deliveryCost} ₽`,
+      `<b>Комментарий:</b> ${order.comment || 'нет'}`,
+      '',
+      '<b>Заказанные позиции:</b>',
+      ...order.items.map(item => `- ${item.name} (${item.price} ₽) × ${item.quantity} = ${item.total} ₽`),
+      '',
+      `<b>Итого к оплате:</b> ${order.total} ₽`
+    ];
+
+    if (CONFIG.telegramBotToken && CONFIG.telegramChatId) {
+      const telegramUrl = `https://api.telegram.org/bot${CONFIG.telegramBotToken}/sendMessage` +
+        `?chat_id=${encodeURIComponent(CONFIG.telegramChatId)}` +
+        `&parse_mode=HTML&text=${encodeURIComponent(messageLines.join('\n'))}`;
+
+      fetch(telegramUrl).catch(error => console.error('Ошибка Telegram:', error));
+    } else {
+      console.warn('Telegram credentials are not set. Notification skipped.');
+    }
+
+    if (CONFIG.makeWebhookUrl) {
+      const formData = new FormData();
+      formData.append('name', order.name);
+      formData.append('phone', order.phone);
+      formData.append('delivery', order.deliveryMethod === 'courier' ? 'Доставка' : 'Самовывоз');
+      formData.append('address', order.address);
+      formData.append('payment', getPaymentMethodName(order.paymentMethod));
+      formData.append('comment', order.comment || 'Нет комментария');
+      formData.append('deliveryCost', `${order.deliveryCost} ₽`);
+      formData.append('deliveryZone', order.deliveryZone || 'не выбрана');
+      formData.append('total', `${order.total} ₽`);
+
+      order.items.forEach((item, index) => {
+        formData.append(`item${index + 1}`, `${item.name} (${item.price} ₽) × ${item.quantity} = ${item.total} ₽`);
+      });
+
+      fetch(CONFIG.makeWebhookUrl, {
+        method: 'POST',
+        body: formData
+      }).catch(error => console.error('Ошибка webhook:', error));
+    } else {
+      console.warn('Make webhook URL не указан. Отправка не выполнена.');
+    }
+
+    cart = [];
+    updateCart();
+    localStorage.removeItem('tilda-cart');
+
+    clientNameEl.value = '';
+    clientPhoneEl.value = '7';
+    clientAddressEl.value = '';
+    clientCommentEl.value = '';
+    resetDeliveryZone();
+
+    cartModuleEl.classList.remove('open');
+    hideConfirmation();
+    alert('Спасибо за заказ! Наш менеджер свяжется с вами для подтверждения.');
+  }
+
+  function addToCart(productId, productName, productPrice) {
+    const existingItem = cart.find(item => item.id === productId);
+    if (existingItem) {
+      existingItem.quantity += 1;
+    } else {
+      cart.push({
+        id: productId,
+        name: productName,
+        price: productPrice,
+        quantity: 1
+      });
+    }
+    updateCart();
+    cartBtnEl.style.transform = 'scale(1.2)';
+    setTimeout(() => {
+      cartBtnEl.style.transform = 'scale(1)';
+    }, 300);
+  }
+
+  function handleAddToCartClick(e) {
+    const btn = e.target.closest(
+      '.js-store-prodbtn-addtocart, .t-store__btn-add-to-cart, .t-store__btn-addtocart, .t-store-prod__btn, .t-store__card__btn'
+    );
+    if (!btn) return;
+
+    const card = btn.closest(
+      '.js-store-proditem, .t-store__card, .t-store-prod, .t-store__card-wrapper'
+    );
+    if (!card) return;
+
+    const productId = card.dataset.productid || card.id || Math.random().toString(36).slice(2, 11);
+
+    const nameEl = card.querySelector(
+      '.js-store-prodtitle, .t-store__prodtitle, .t-store__card__title, .t-store-prod__title, .t-title, .t-name'
+    );
+    const productName = nameEl ? nameEl.textContent.trim() : 'Товар';
+
+    const priceEl = card.querySelector(
+      '.js-product-price, .t-store__price-value, .t-store__card__price, .t-store-prod__price, .t-price'
+    );
+    let productPrice = 0;
+    if (priceEl) {
+      const priceText = priceEl.textContent.replace(/\s/g, '');
+      productPrice = parseInt(priceText.replace(/[^\d]/g, ''), 10) || 0;
+    }
+
+    addToCart(productId, productName, productPrice);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    cart = JSON.parse(localStorage.getItem('tilda-cart')) || [];
+
+    cartBtnEl = document.getElementById('cartBtn');
+    cartModuleEl = document.getElementById('cartModule');
+    closeBtnEl = document.getElementById('closeCart');
+    cartContentEl = document.getElementById('cartContent');
+    cartCountEl = document.getElementById('cartCount');
+    submitBtnEl = document.getElementById('submitOrder');
+    deliveryMethodEl = document.getElementById('deliveryMethod');
+    addressFieldEl = document.getElementById('addressField');
+    clientNameEl = document.getElementById('clientName');
+    clientPhoneEl = document.getElementById('clientPhone');
+    clientAddressEl = document.getElementById('clientAddress');
+    clientCommentEl = document.getElementById('clientComment');
+    confirmationModalEl = document.getElementById('confirmationModal');
+    confirmOrderBtnEl = document.getElementById('confirmOrder');
+    cancelOrderBtnEl = document.getElementById('cancelOrder');
+    orderSubtotalEl = document.getElementById('orderSubtotal');
+    orderTotalEl = document.getElementById('orderTotal');
+    zoneInfoEl = document.getElementById('deliveryZoneInfo');
+    resetZoneBtnEl = document.getElementById('resetZoneBtn');
+    mapContainerEl = document.getElementById('mapContainer');
+    mapPlaceholderEl = document.getElementById('deliveryMapPlaceholder');
+    nameErrorEl = document.getElementById('nameError');
+    phoneErrorEl = document.getElementById('phoneError');
+    addressErrorEl = document.getElementById('addressError');
+
+    clientPhoneEl.addEventListener('input', function () {
+      if (!this.value.startsWith('7')) {
+        this.value = '7' + this.value.replace(/[^0-9]/g, '');
+      } else {
+        this.value = '7' + this.value.slice(1).replace(/[^0-9]/g, '');
+      }
+    });
+
+    updateCart();
+    updateZoneInfo();
+
+    if (deliveryMethodEl.value === 'courier') {
+      mapContainerEl.style.display = 'block';
+      startMapIfNeeded();
+    } else {
+      mapContainerEl.style.display = 'none';
+    }
+
+    cartBtnEl.addEventListener('click', () => {
+      cartModuleEl.classList.add('open');
+    });
+
+    closeBtnEl.addEventListener('click', () => {
+      cartModuleEl.classList.remove('open');
+    });
+
+    submitBtnEl.addEventListener('click', submitOrder);
+    confirmOrderBtnEl.addEventListener('click', processOrder);
+    cancelOrderBtnEl.addEventListener('click', hideConfirmation);
+
+    deliveryMethodEl.addEventListener('change', function () {
+      if (this.value === 'pickup') {
+        addressFieldEl.style.display = 'none';
+        mapContainerEl.style.display = 'none';
+        resetDeliveryZone();
+      } else {
+        addressFieldEl.style.display = 'block';
+        mapContainerEl.style.display = 'block';
+        startMapIfNeeded();
+      }
+      updateOrderTotal();
+    });
+
+    resetZoneBtnEl.addEventListener('click', () => {
+      resetDeliveryZone();
+      updateOrderTotal();
+    });
+
+    clientNameEl.addEventListener('input', validateForm);
+    clientPhoneEl.addEventListener('input', validateForm);
+    clientAddressEl.addEventListener('input', validateForm);
+
+    document.addEventListener('click', handleAddToCartClick);
+
+    const observer = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        if (mutation.addedNodes.length) {
+          document.addEventListener('click', handleAddToCartClick, { once: true });
+        }
+      });
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+  });
+</script>
+</script>
+</body>
+</html>
