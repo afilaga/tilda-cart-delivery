@@ -35,6 +35,11 @@ _The Filatiev Method – Case 001_
 Если меняешь географию доставки — обнови координаты зон и центр карты (`MAP_CENTER`, `deliveryZones` / `MAP_ZONES`).
 
 
+Пример отображения мобильной версии:
+
+![Cart Mobile Form](https://github.com/afilaga/tilda-cart-delivery/raw/main/delivery_mobile_form.png)
+![Cart Mobile Map](https://github.com/afilaga/tilda-cart-delivery/raw/main/delivery_mobile_map.png)
+
 1. Вставь нужную версию (desktop/mobile) в Zero Block или как iframe-блок.
 2. Пропиши реальные значения в `CONFIG` (бот, чат, вебхук, ключи карт).
 3. Уточни координаты и стоимость зон доставки под свой город, если нужно.
